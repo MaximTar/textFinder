@@ -1,0 +1,31 @@
+<?import javafx.scene.layout.GridPane?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+<GridPane fx:controller="com.github.textFinder.Controller"
+          xmlns:fx="http://javafx.com/fxml" alignment="center" hgap="10" vgap="10">
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <Label text="Text:"
+           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <TextField fx:id="textToFind" promptText="Input text here"
+               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Folder:"
+           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <Label text="Here will be the path to the folder" fx:id="folderLabel"
+           GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+    <Button text="Select folder" onAction="#handleSelectFolderButtonAction" prefWidth="120" prefHeight="30"
+            GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+
+
+    <HBox spacing="10" alignment="bottom_right"
+          GridPane.rowIndex="3" GridPane.columnIndex="2">
+        <Button text="Find!" onAction="#handleFindButtonAction" prefWidth="120" prefHeight="30"/>
+    </HBox>
+</GridPane>
