@@ -1,5 +1,6 @@
 package com.github.textFinder.utilities;
 
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.jar.JarFile;
 
 /**
  * Created by maxtar.
@@ -23,8 +25,11 @@ public class TikaHandler {
         Metadata metadata = new Metadata();
         try (InputStream stream = new FileInputStream(file)) {
             parser.parse(stream, handler, metadata);
+            System.out.println("!!!");
+            System.out.println(parser.getClass().getName());
             return handler.toString();
         }
+
     }
 
     public String parseToString(File file) throws IOException, SAXException, TikaException {
