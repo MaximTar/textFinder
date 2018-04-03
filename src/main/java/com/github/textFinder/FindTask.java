@@ -1,13 +1,10 @@
 package com.github.textFinder;
 
-import com.github.textFinder.utilities.AlertException;
-import com.github.textFinder.utilities.FileEncoding;
-import com.github.textFinder.utilities.TextFinderLogger;
+import com.github.textFinder.utilities.*;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * Created by maxtar.
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class FindTask extends Task<Map<File, List<String>>> {
 
     private List<Path> paths = new ArrayList<>();
@@ -56,32 +53,16 @@ public class FindTask extends Task<Map<File, List<String>>> {
         for (Path path : paths) {
             File file = new File(path.toString());
             List<String> fileResults = new ArrayList<>();
-            try {
-                if (FileEncoding.SINGLE_INSTANCE.contentIsText(file, true)) {
-                    try {
-                        Scanner scanner = new Scanner(file);
-                        int lineNum = 0;
-                        while (scanner.hasNextLine()) {
-                            String line = scanner.nextLine();
-                            lineNum++;
-                            if (line.contains(textToFind)) {
-                                fileResults.add(lineNum + " " + line);
-                            }
-                        }
-                    } catch (FileNotFoundException e) {
-                        new AlertException(Alert.AlertType.ERROR, "There was an error while scanning " +
-                                file.getName() + " file\n" + "Maybe program could not access the file.\n" +
-                                "Grant the rights to the program so that it can access the filesystem.");
-                        LOGGER.log(Level.WARNING, "FileNotFoundException while reading" +
-                                file.getName() + " file. StackTrace: " + Arrays.toString(e.getStackTrace()));
-                    }
+            System.out.println(path.getFileName());
+            String text = TikaHandler.parse(file);
+            Scanner scanner = new Scanner(text);
+            int lineNum = 0;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                lineNum++;
+                if (line.contains(textToFind)) {
+                    fileResults.add(lineNum + " " + line);
                 }
-            } catch (IOException e) {
-                new AlertException(Alert.AlertType.ERROR, "There was an error while reading " +
-                        file.getName() + " file\n" + "Maybe program could not access the file.\n" +
-                        "Grant the rights to the program so that it can access the filesystem.");
-                LOGGER.log(Level.WARNING, "IOException while reading" + file.getName() +
-                        " file (checking if content is text). StackTrace: " + Arrays.toString(e.getStackTrace()));
             }
             if (!fileResults.isEmpty()) {
                 results.put(file, fileResults);
