@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Created by maxtar on 02.04.18.
+ * Created by maxtar.
  */
 public class TextFinderLogger {
 

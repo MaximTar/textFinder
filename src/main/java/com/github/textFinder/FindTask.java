@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
  * Created by maxtar.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class FindTask extends Task<Map<File, List<String>>> {
+public class FindTask extends Task<Map<String, List<String>>> {
 
     private List<Path> paths = new ArrayList<>();
-    private final Map<File, List<String>> results = new HashMap<>();
+    private final Map<String, List<String>> results = new HashMap<>();
     private Path userPath;
     private String textToFind;
 
@@ -35,7 +35,7 @@ public class FindTask extends Task<Map<File, List<String>>> {
     }
 
     @Override
-    protected Map<File, List<String>> call() throws Exception {
+    protected Map<String, List<String>> call() throws Exception {
 
         // todo think about second task to list files
         try {
@@ -52,9 +52,11 @@ public class FindTask extends Task<Map<File, List<String>>> {
         long counter = 0;
         for (Path path : paths) {
             File file = new File(path.toString());
+
             List<String> fileResults = new ArrayList<>();
             System.out.println(path.getFileName());
-            String text = TikaHandler.parse(file);
+            TikaHandler handler = new TikaHandler(file);
+            String text = handler.parse();
             Scanner scanner = new Scanner(text);
             int lineNum = 0;
             while (scanner.hasNextLine()) {
@@ -65,7 +67,7 @@ public class FindTask extends Task<Map<File, List<String>>> {
                 }
             }
             if (!fileResults.isEmpty()) {
-                results.put(file, fileResults);
+                results.put(file.getAbsolutePath() + handler.getObjectLocation(), fileResults);
             }
             counter++;
             this.updateProgress(counter, count);

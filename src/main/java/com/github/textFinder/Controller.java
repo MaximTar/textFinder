@@ -75,7 +75,7 @@ public class Controller {
             findTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED,
                     event -> {
                         progressStage.close();
-                        Map<File, List<String>> results = findTask.getValue();
+                        Map<String, List<String>> results = findTask.getValue();
                         ResultBox resultBox = new ResultBox(results);
                         Node source = (Node) actionEvent.getSource();
                         Stage stage = (Stage) source.getScene().getWindow();

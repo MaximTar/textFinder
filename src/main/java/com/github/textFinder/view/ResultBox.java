@@ -14,13 +14,13 @@ import java.util.Map;
  */
 public class ResultBox extends VBox {
 
-    public ResultBox(Map<File, List<String>> map) {
+    public ResultBox(Map<String, List<String>> map) {
 
         setPadding(new Insets(25));
         setSpacing(10);
 
-        for (Map.Entry<File, List<String>> entry : map.entrySet()) {
-            Label label = new Label(entry.getKey().getAbsolutePath());
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            Label label = new Label(entry.getKey());
             VBox vBox = new VBox();
             vBox.setSpacing(5);
             for (String string : entry.getValue()) {
