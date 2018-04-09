@@ -1,5 +1,6 @@
-package com.github.textFinder;
+package com.github.textFinder.controller;
 
+import com.github.textFinder.model.FindTask;
 import com.github.textFinder.utilities.AlertException;
 import com.github.textFinder.utilities.TextFinderLogger;
 import com.github.textFinder.view.ResultBox;

@@ -1,5 +1,6 @@
 package com.github.textFinder.utilities;
 
+import com.github.textFinder.model.FindTask;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -14,64 +15,43 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 /**
  * Created by maxtar.
+ * Used examples of recursive parsing from
+ * https://wiki.apache.org/tika/RecursiveMetadata
  */
+@SuppressWarnings("WeakerAccess")
 public class TikaHandler {
 
-    private boolean isPackage = false;
-    private String objectLocation;
     private File file;
+    private FindTask task;
 
-    public TikaHandler(File file) {
+    public TikaHandler(File file, FindTask task) {
         this.file = file;
+        this.task = task;
     }
 
     public String parse() throws IOException, SAXException, TikaException {
-        Metadata metadata = new Metadata();
         TikaConfig tika = TikaConfig.getDefaultConfig();
         Parser parser = new AutoDetectParser(tika);
 
-        ParserDecorator recurseWith;
-        recurseWith = new RecursiveTrackingMetadataParser(parser, file.getAbsolutePath());
+        ParserDecorator recurseWith = new RecursiveTrackingMetadataParser(parser, file.getAbsolutePath());
         ParseContext context = new ParseContext();
         context.set(Parser.class, recurseWith);
 
         ContentHandler content = new BodyContentHandler();
-        TikaInputStream stream = TikaInputStream.get(new File(file.getAbsolutePath()));
-        parser.parse(stream, content, metadata, context);
-
-//        System.out.println("METADATA = " + metadata);
-//        System.out.println("CONTENT = " + content.toString());
-
-//        if (metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
-//            System.out.println("CONTAINS!!!");
-//        } else {
-//            System.out.println("----");
-//            System.out.println(content.toString());
-//            System.out.println("----");
-//        }
+        InputStream stream = new FileInputStream(file);
+//        TikaInputStream stream = TikaInputStream.get(new File(filePath));
+        parser.parse(stream, content, new Metadata(), context);
 
         return content.toString();
-    }
-
-    public boolean isPackage() {
-        return isPackage;
-    }
-
-    public void setPackage(boolean isPackage) {
-        this.isPackage = isPackage;
-    }
-
-    public String getObjectLocation() {
-        return objectLocation;
-    }
-
-    public void setObjectLocation(String objectLocation) {
-        this.objectLocation = objectLocation;
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -89,7 +69,7 @@ public class TikaHandler {
 
         @Override
         public void parse(
-                InputStream stream, ContentHandler content,
+                InputStream stream, ContentHandler ignore,
                 Metadata metadata, ParseContext context)
                 throws IOException, SAXException, TikaException {
             String objectName;
@@ -102,7 +82,7 @@ public class TikaHandler {
             }
             String objectLocation = this.location + objectName;
 
-            // Fetch the contents, and recurse if possible
+            ContentHandler content = new BodyContentHandler();
             Parser preContextParser = context.get(Parser.class);
             context.set(Parser.class, new RecursiveTrackingMetadataParser(getWrappedParser(), objectLocation));
             super.parse(stream, content, metadata, context);
@@ -110,23 +90,22 @@ public class TikaHandler {
 
             // fixme this hardcode is written to check if object is package
             // (https://tika.apache.org/1.11/formats.html#Full_list_of_Supported_Formats)
-            if (metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
-                setPackage(true);
-            } else {
-                setPackage(false);
+            if (!metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
+                String text = content.toString();
+                List<String> fileResults = new ArrayList<>();
+                Scanner scanner = new Scanner(text);
+                int lineNum = 0;
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    lineNum++;
+                    if (line.contains(task.getTextToFind())) {
+                        fileResults.add(lineNum + " " + line);
+                    }
+                }
+                if (!fileResults.isEmpty()) {
+                    task.getResults().put(objectLocation, fileResults);
+                }
             }
-
-
-            // Report what this one is
-            setObjectLocation(objectLocation);
-
-//            if (metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
-//                System.out.println("CONTAINS!!!");
-//            } else {
-//                System.out.println("----");
-//                System.out.println(content.toString());
-//                System.out.println("----");
-//            }
         }
     }
 

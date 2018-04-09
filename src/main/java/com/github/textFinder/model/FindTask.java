@@ -1,4 +1,4 @@
-package com.github.textFinder;
+package com.github.textFinder.model;
 
 import com.github.textFinder.utilities.*;
 import javafx.concurrent.Task;
@@ -52,23 +52,8 @@ public class FindTask extends Task<Map<String, List<String>>> {
         long counter = 0;
         for (Path path : paths) {
             File file = new File(path.toString());
-
-            List<String> fileResults = new ArrayList<>();
-            System.out.println(path.getFileName());
-            TikaHandler handler = new TikaHandler(file);
+            TikaHandler handler = new TikaHandler(file, this);
             String text = handler.parse();
-            Scanner scanner = new Scanner(text);
-            int lineNum = 0;
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                lineNum++;
-                if (line.contains(textToFind)) {
-                    fileResults.add(lineNum + " " + line);
-                }
-            }
-            if (!fileResults.isEmpty()) {
-                results.put(file.getAbsolutePath() + handler.getObjectLocation(), fileResults);
-            }
             counter++;
             this.updateProgress(counter, count);
         }
@@ -100,5 +85,13 @@ public class FindTask extends Task<Map<String, List<String>>> {
 
     public void setTextToFind(String textToFind) {
         this.textToFind = textToFind;
+    }
+
+    public Map<String, List<String>> getResults() {
+        return results;
+    }
+
+    public String getTextToFind() {
+        return textToFind;
     }
 }
