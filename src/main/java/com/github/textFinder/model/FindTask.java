@@ -53,7 +53,7 @@ public class FindTask extends Task<Map<String, List<String>>> {
         for (Path path : paths) {
             File file = new File(path.toString());
             TikaHandler handler = new TikaHandler(file, this);
-            String text = handler.parse();
+            handler.parse();
             counter++;
             this.updateProgress(counter, count);
         }

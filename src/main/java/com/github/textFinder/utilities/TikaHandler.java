@@ -11,6 +11,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -38,7 +39,7 @@ public class TikaHandler {
         this.task = task;
     }
 
-    public String parse() throws IOException, SAXException, TikaException {
+    public void parse() throws IOException, SAXException, TikaException {
         TikaConfig tika = TikaConfig.getDefaultConfig();
         Parser parser = new AutoDetectParser(tika);
 
@@ -48,16 +49,14 @@ public class TikaHandler {
 
         ContentHandler content = new BodyContentHandler();
         InputStream stream = new FileInputStream(file);
-//        TikaInputStream stream = TikaInputStream.get(new File(filePath));
-        parser.parse(stream, content, new Metadata(), context);
-
-        return content.toString();
+//        parser.parse(stream, content, new Metadata(), context);
+        recurseWith.parse(stream, content, new Metadata(), context);
     }
 
     @SuppressWarnings("WeakerAccess")
     private class RecursiveTrackingMetadataParser extends ParserDecorator {
         private String location;
-        private int unknownCount = 0;
+//        private int unknownCount = 0;
 
         public RecursiveTrackingMetadataParser(Parser parser, String location) {
             super(parser);
@@ -72,15 +71,22 @@ public class TikaHandler {
                 InputStream stream, ContentHandler ignore,
                 Metadata metadata, ParseContext context)
                 throws IOException, SAXException, TikaException {
-            String objectName;
+            String objectName = "";
             if (metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY) != null) {
                 objectName = metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY);
             } else if (metadata.get(TikaMetadataKeys.EMBEDDED_RELATIONSHIP_ID) != null) {
                 objectName = metadata.get(TikaMetadataKeys.EMBEDDED_RELATIONSHIP_ID);
-            } else {
-                objectName = "embedded-" + (++unknownCount);
             }
+//            else {
+//                objectName = "embedded-" + (++unknownCount);
+//            }
             String objectLocation = this.location + objectName;
+
+            // todo make detector
+
+            System.out.println(objectLocation);
+            System.out.println("---metadata---");
+            System.out.println(metadata);
 
             ContentHandler content = new BodyContentHandler();
             Parser preContextParser = context.get(Parser.class);
@@ -91,6 +97,25 @@ public class TikaHandler {
             // fixme this hardcode is written to check if object is package
             // (https://tika.apache.org/1.11/formats.html#Full_list_of_Supported_Formats)
             if (!metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
+                System.out.println("111");
+                if (metadata.toString().contains("spreadsheet")) {
+                    System.out.println("222");
+                    ContentHandler XMLContent = new ToXMLContentHandler();
+                    Parser preXMLContextParser = context.get(Parser.class);
+                    context.set(Parser.class, new RecursiveTrackingMetadataParser(getWrappedParser(), objectLocation));
+                    super.parse(stream, XMLContent, metadata, context);
+                    context.set(Parser.class, preXMLContextParser);
+                    System.out.println("333");
+                    System.out.println(objectLocation);
+                    System.out.println("---metadata---");
+                    System.out.println(metadata);
+                    System.out.println("---content---");
+                    System.out.println(XMLContent.toString());
+                }
+//                System.out.println(objectLocation);
+//                System.out.println("---metadata---");
+//                System.out.println(metadata);
+//                System.out.println("----------");
                 String text = content.toString();
                 List<String> fileResults = new ArrayList<>();
                 Scanner scanner = new Scanner(text);
