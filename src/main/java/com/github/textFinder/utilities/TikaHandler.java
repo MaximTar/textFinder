@@ -1,9 +1,9 @@
 package com.github.textFinder.utilities;
 
 import com.github.textFinder.model.FindTask;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
@@ -40,8 +40,8 @@ public class TikaHandler {
     }
 
     public void parse() throws IOException, SAXException, TikaException {
-        TikaConfig tika = TikaConfig.getDefaultConfig();
-        Parser parser = new AutoDetectParser(tika);
+        TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+        Parser parser = new AutoDetectParser(tikaConfig);
 
         ParserDecorator recurseWith = new RecursiveTrackingMetadataParser(parser, file.getAbsolutePath());
         ParseContext context = new ParseContext();
@@ -49,8 +49,35 @@ public class TikaHandler {
 
         ContentHandler content = new BodyContentHandler();
         InputStream stream = new FileInputStream(file);
-//        parser.parse(stream, content, new Metadata(), context);
-        recurseWith.parse(stream, content, new Metadata(), context);
+
+        Tika tika = new Tika();
+        String fileType = tika.detect(file);
+        System.out.println(file.toString());
+        System.out.println("---TYPE---");
+        System.out.println(fileType);
+
+
+        if (fileType.contains("spreadsheet")) {
+            parseSpreadsheet();
+        } else {
+//            parser.parse(stream, content, new Metadata(), context);
+            recurseWith.parse(stream, content, new Metadata(), context);
+        }
+    }
+
+    private String parseSpreadsheet() throws IOException, SAXException, TikaException {
+        AutoDetectParser parser = new AutoDetectParser();
+        ContentHandler handler = new ToXMLContentHandler();
+        Metadata metadata = new Metadata();
+
+        // todo add xml reader
+
+        try (InputStream stream = new FileInputStream(file)) {
+            parser.parse(stream, handler, metadata);
+            System.out.println("---content---");
+            System.out.println(handler.toString());
+            return handler.toString();
+        }
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -82,8 +109,6 @@ public class TikaHandler {
 //            }
             String objectLocation = this.location + objectName;
 
-            // todo make detector
-
             System.out.println(objectLocation);
             System.out.println("---metadata---");
             System.out.println(metadata);
@@ -97,21 +122,6 @@ public class TikaHandler {
             // fixme this hardcode is written to check if object is package
             // (https://tika.apache.org/1.11/formats.html#Full_list_of_Supported_Formats)
             if (!metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
-                System.out.println("111");
-                if (metadata.toString().contains("spreadsheet")) {
-                    System.out.println("222");
-                    ContentHandler XMLContent = new ToXMLContentHandler();
-                    Parser preXMLContextParser = context.get(Parser.class);
-                    context.set(Parser.class, new RecursiveTrackingMetadataParser(getWrappedParser(), objectLocation));
-                    super.parse(stream, XMLContent, metadata, context);
-                    context.set(Parser.class, preXMLContextParser);
-                    System.out.println("333");
-                    System.out.println(objectLocation);
-                    System.out.println("---metadata---");
-                    System.out.println(metadata);
-                    System.out.println("---content---");
-                    System.out.println(XMLContent.toString());
-                }
 //                System.out.println(objectLocation);
 //                System.out.println("---metadata---");
 //                System.out.println(metadata);
@@ -133,5 +143,7 @@ public class TikaHandler {
             }
         }
     }
+
+//    private class
 
 }
