@@ -1,5 +1,6 @@
 package com.github.textFinder.model;
 
+import com.github.textFinder.controller.Controller;
 import com.github.textFinder.utilities.*;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
@@ -25,6 +26,7 @@ public class FindTask extends Task<Map<String, List<String>>> {
     private final Map<String, List<String>> results = new HashMap<>();
     private Path userPath;
     private String textToFind;
+    private String type;
 
     private final static Logger LOGGER = Logger.getLogger(FindTask.class.getName());
 
@@ -52,7 +54,7 @@ public class FindTask extends Task<Map<String, List<String>>> {
         long counter = 0;
         for (Path path : paths) {
             File file = new File(path.toString());
-            TikaHandler handler = new TikaHandler(file, this);
+            TikaHandler handler = new TikaHandler(file, this, type);
             handler.parse();
             counter++;
             this.updateProgress(counter, count);
@@ -93,5 +95,9 @@ public class FindTask extends Task<Map<String, List<String>>> {
 
     public String getTextToFind() {
         return textToFind;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

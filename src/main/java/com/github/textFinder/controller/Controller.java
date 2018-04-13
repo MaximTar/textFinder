@@ -7,6 +7,7 @@ import com.github.textFinder.view.ResultBox;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -17,6 +18,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -24,14 +26,25 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
 @SuppressWarnings("WeakerAccess")
-public class Controller {
+public class Controller implements Initializable {
 
+    public enum TYPE {FILE, NAME, BOTH}
+
+    @FXML
+    private ToggleGroup groupWhereFind;
+    @FXML
+    private ToggleButton inFile;
+    @FXML
+    private ToggleButton inName;
+    @FXML
+    private ToggleButton both;
     @FXML
     private Label folderLabel;
     @FXML
     private TextField textToFind;
     @SuppressWarnings("FieldCanBeLocal")
     private final String folderLabelText = "Here will be the path to the folder";
+    private Toggle lastSelected = new ToggleButton();
 
     private final static Logger LOGGER = Logger.getLogger(Controller.class.getName());
 
@@ -48,11 +61,13 @@ public class Controller {
         } else if (textToFind.getText().isEmpty()) {
             new AlertException(Alert.AlertType.INFORMATION, "Enter text first!");
         } else {
+
             Path userPath = Paths.get(folderLabel.getText());
 
             FindTask findTask = new FindTask();
             findTask.setUserPath(userPath);
             findTask.setTextToFind(textToFind.getText());
+            findTask.setType(groupWhereFind.getSelectedToggle().getUserData().toString());
 
             Stage progressStage = new Stage();
             HBox progressBox = new HBox();
@@ -95,5 +110,21 @@ public class Controller {
         if (selectedDirectory != null) {
             folderLabel.setText(selectedDirectory.getAbsolutePath());
         }
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        inFile.setUserData(TYPE.FILE);
+        inName.setUserData(TYPE.NAME);
+        both.setUserData(TYPE.BOTH);
+
+        groupWhereFind.selectedToggleProperty().addListener((observableValue, toggle, t1) -> {
+            if (groupWhereFind.getSelectedToggle() != null) {
+                lastSelected = groupWhereFind.getSelectedToggle();
+            } else if (groupWhereFind.getSelectedToggle() == null) {
+                groupWhereFind.selectToggle(lastSelected);
+            }
+        });
     }
 }

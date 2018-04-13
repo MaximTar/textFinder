@@ -1,5 +1,6 @@
 package com.github.textFinder.model;
 
+import com.github.textFinder.controller.Controller;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -28,6 +29,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 /**
@@ -40,10 +42,12 @@ public class TikaHandler {
 
     private File file;
     private FindTask task;
+    private String type;
 
-    public TikaHandler(File file, FindTask task) {
+    public TikaHandler(File file, FindTask task, String type) {
         this.file = file;
         this.task = task;
+        this.type = type;
     }
 
     public void parse()
@@ -61,10 +65,14 @@ public class TikaHandler {
         Tika tika = new Tika();
         String fileType = tika.detect(file);
 
-        if (fileType.contains("spreadsheet")) {
-            parseSpreadsheet();
-        } else {
+        if (Objects.equals(type, Controller.TYPE.FILE.toString())) {
+            if (fileType.contains("spreadsheet")) {
+                parseSpreadsheet();
+            } else {
 //            parser.parse(stream, content, new Metadata(), context);
+                recurseWith.parse(stream, content, new Metadata(), context);
+            }
+        } else if (Objects.equals(type, Controller.TYPE.NAME.toString())) {
             recurseWith.parse(stream, content, new Metadata(), context);
         }
     }
@@ -124,22 +132,29 @@ public class TikaHandler {
             super.parse(stream, content, metadata, context);
             context.set(Parser.class, preContextParser);
 
-            // fixme this hardcode is written to check if object is package
+            // This hardcode is written to check if object is package
             // (https://tika.apache.org/1.11/formats.html#Full_list_of_Supported_Formats)
-            if (!metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
-                String text = content.toString();
-                List<String> fileResults = new ArrayList<>();
-                Scanner scanner = new Scanner(text);
-                int lineNum = 0;
-                while (scanner.hasNextLine()) {
-                    String line = scanner.nextLine();
-                    lineNum++;
-                    if (line.contains(task.getTextToFind())) {
-                        fileResults.add("line " + lineNum + ": " + line);
+            if (Objects.equals(type, Controller.TYPE.FILE.toString())) {
+                if (!metadata.toString().contains("X-Parsed-By=org.apache.tika.parser.pkg.")) {
+                    String text = content.toString();
+                    List<String> fileResults = new ArrayList<>();
+                    Scanner scanner = new Scanner(text);
+                    int lineNum = 0;
+                    while (scanner.hasNextLine()) {
+                        String line = scanner.nextLine();
+                        lineNum++;
+                        if (line.contains(task.getTextToFind())) {
+                            fileResults.add("line " + lineNum + ": " + line);
+                        }
+                    }
+                    if (!fileResults.isEmpty()) {
+                        task.getResults().put(objectLocation, fileResults);
                     }
                 }
-                if (!fileResults.isEmpty()) {
-                    task.getResults().put(objectLocation, fileResults);
+            } else if (Objects.equals(type, Controller.TYPE.NAME.toString())) {
+                // todo find only in filename not in all path
+                if (objectLocation.contains(task.getTextToFind())) {
+                    task.getResults().put(objectLocation, new ArrayList<>());
                 }
             }
         }
